@@ -110,25 +110,54 @@ Full details are in the [installation docs](https://nono.sh/docs/cli/getting_sta
 
 **Task 1c: Windows — set up WSL2, then install inside it**
 
-nono does not run natively on Windows — you need WSL2 first.
+nono does not run natively on Windows — you need WSL2 first, **with an actual Linux distro installed inside it**. `wsl --install` on its own only sets up the WSL2 platform/feature; on many machines (especially if the Windows optional features were already partially enabled) it won't automatically pull down a distro, so you need to install one explicitly.
 
-1. Open **PowerShell as Administrator** and install WSL2 with a Linux distribution (Ubuntu is the default and recommended for this workshop):
+1. Open **PowerShell as Administrator** and see which distros are available:
 
    ```powershell
-   wsl --install
+   wsl --list --online
    ```
 
-   > :bulb: If WSL is already installed, make sure you're on WSL**2** (not WSL1): run `wsl -l -v` and check the `VERSION` column. Upgrade a distro with `wsl --set-version <DistroName> 2`.
+   Expected output (list may vary):
 
-2. Restart your computer if prompted, then launch your new Linux distro from the Start menu. On first launch you'll be asked to create a Linux username and password — this is separate from your Windows login.
+   ```
+   NAME                            FRIENDLY NAME
+   Ubuntu                          Ubuntu
+   Ubuntu-24.04                    Ubuntu 24.04 LTS
+   Debian                          Debian GNU/Linux
+   ...
+   ```
 
-3. Inside the WSL2 terminal, check your kernel version — nono needs kernel 5.13+ for Landlock, and WSL2's kernel (6.6 by default) already ships with it enabled:
+2. Install a specific distro by name (Ubuntu is recommended for this workshop):
+
+   ```powershell
+   wsl --install -d Ubuntu-24.04
+   ```
+
+   > :bulb: Running `wsl --install` with no `-d` flag *should* also install a default distro (Ubuntu) on a fresh machine, but if you already had the WSL feature enabled from something else, it can complete without installing anything. Always follow up with `wsl -l -v` to confirm a distro is actually present before moving on.
+
+3. Confirm the distro installed and that it's running as WSL**2** (not WSL1) — check the `VERSION` column:
+
+   ```powershell
+   wsl -l -v
+   ```
+
+   ```
+     NAME            STATE           VERSION
+   * Ubuntu-24.04     Running         2
+   ```
+
+   > :bulb: If `VERSION` shows `1`, upgrade it with `wsl --set-version Ubuntu-24.04 2`.
+
+4. Restart your computer if prompted, then launch your new Linux distro from the Start menu (search for its name, e.g. "Ubuntu 24.04 LTS"). On first launch you'll be asked to create a Linux username and password — this is separate from your Windows login.
+
+5. Inside the WSL2 terminal, check your kernel version — nono needs kernel 5.13+ for Landlock, and WSL2's kernel (6.6 by default) already ships with it enabled:
 
    ```bash
    uname -r
    ```
 
-4. Update packages and install nono using the Linux instructions from Task 1b above (Homebrew on Linux also works inside WSL2):
+6. Update packages and install nono using the Linux instructions from Task 1b above (Homebrew on Linux also works inside WSL2):
 
    ```bash
    sudo apt update

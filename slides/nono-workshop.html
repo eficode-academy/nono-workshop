@@ -1,0 +1,1309 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Nono Workshop — Sandboxing AI Agents</title>
+
+  <!-- Reveal.js core -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/reveal.min.css" />
+  <link id="theme-dark" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/theme/black.min.css" />
+  <link id="theme-light" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/theme/white.min.css" disabled />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <style>
+    /*
+     * Reveal.js slide styles — Eficode brand theme
+     *
+     * Brand palette:
+     *   --eficode-yellow : #FFD100  (primary brand yellow)
+     *   --eficode-dark   : #1A1A1A  (near-black for text / logo background)
+     *   --eficode-orange : #E5A000  (warm accent, used in illustrations)
+     */
+
+    /* ── Root variables ── */
+    :root {
+      --eficode-yellow: #FFD100;
+      --eficode-dark: #1A1A1A;
+      --eficode-orange: #E5A000;
+      --eficode-gray: #dad9d9;
+
+      --accent: #FFD100;
+      --accent-dim: rgba(255, 209, 0, 0.12);
+      --accent-mid: rgba(255, 209, 0, 0.30);
+      --accent-bright: rgba(255, 209, 0, 0.55);
+      --text-muted: rgba(255, 255, 255, 0.75);
+    }
+
+    /* ── Theme toggle button ── */
+    .theme-toggle {
+      position: fixed;
+      top: 15px;
+      right: 15px;
+      z-index: 100;
+      background: rgba(128, 128, 128, 0.3);
+      border: 1px solid rgba(128, 128, 128, 0.5);
+      color: inherit;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      font-size: 1.1em;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
+      backdrop-filter: blur(4px);
+    }
+
+    .theme-toggle:hover {
+      background: rgba(128, 128, 128, 0.5);
+      transform: scale(1.1);
+    }
+
+    /* ── Light mode overrides ── */
+    html.light-mode {
+      --accent: #1A1A1A;
+      --accent-dim: rgba(26, 26, 26, 0.08);
+      --accent-mid: rgba(26, 26, 26, 0.20);
+      --accent-bright: rgba(26, 26, 26, 0.40);
+      --text-muted: rgba(0, 0, 0, 0.60);
+    }
+
+    html.light-mode .card {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(0, 0, 0, 0.02));
+      border-color: var(--accent-mid);
+    }
+
+    html.light-mode .card:hover {
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.14), rgba(0, 0, 0, 0.04));
+      border-color: var(--accent-bright);
+      box-shadow: 0 10px 30px rgba(26, 26, 26, 0.12);
+    }
+
+    html.light-mode .card p,
+    html.light-mode .demo-context {
+      color: var(--text-muted);
+    }
+
+    html.light-mode .agenda-list li {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(0, 0, 0, 0.02));
+      border-left-color: var(--eficode-yellow);
+    }
+
+    html.light-mode .code-block {
+      background: rgba(240, 240, 240, 0.9);
+      border-color: var(--accent-mid);
+      color: #24292e;
+    }
+
+    html.light-mode .code-block .comment {
+      color: #6a737d;
+    }
+
+    html.light-mode .code-block .keyword {
+      color: #d73a49;
+    }
+
+    html.light-mode .code-block .string {
+      color: #032f62;
+    }
+
+    html.light-mode .code-block .property {
+      color: #005cc5;
+    }
+
+    html.light-mode .file-tree {
+      background: rgba(240, 240, 240, 0.8);
+      border-color: var(--accent-mid);
+    }
+
+    html.light-mode .file-tree .folder {
+      color: var(--eficode-orange);
+    }
+
+    html.light-mode .file-tree .highlight {
+      color: #22863a;
+    }
+
+    html.light-mode .badge {
+      background: var(--eficode-yellow);
+      color: #1a1a1a;
+    }
+
+    html.light-mode .compare-table th {
+      background: linear-gradient(135deg, var(--eficode-yellow), rgba(0, 0, 0, 0.05));
+      border-color: var(--accent-bright);
+      color: var(--eficode-dark);
+    }
+
+    html.light-mode .compare-table td {
+      border-color: rgba(0, 0, 0, 0.12);
+      background: rgba(0, 0, 0, 0.02);
+    }
+
+    html.light-mode .compare-table tr:hover td {
+      background: var(--accent-dim);
+    }
+
+    html.light-mode .highlight-box {
+      background: linear-gradient(135deg, rgba(255, 209, 0, 0.15), rgba(0, 0, 0, 0.02));
+      border-color: var(--eficode-yellow);
+    }
+
+    html.light-mode .workflow-step {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(0, 0, 0, 0.02));
+      border-color: var(--accent-mid);
+    }
+
+    html.light-mode .workflow-arrow {
+      color: var(--eficode-orange);
+    }
+
+    html.light-mode .demo-container video {
+      border-color: var(--accent-mid);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    }
+
+    html.light-mode .qa-icon {
+      color: var(--eficode-yellow);
+    }
+
+    .reveal h1,
+    .reveal h2,
+    .reveal h3 {
+      text-transform: none;
+    }
+
+    /* ── Card grids ── */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 20px;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      padding: 10px;
+      text-align: left;
+    }
+
+    .card {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(255, 255, 255, 0.05));
+      border-radius: 8px;
+      padding: 20px;
+      border: 2px solid var(--accent-mid);
+      transition: all 0.3s ease;
+    }
+
+    .card:hover {
+      background: linear-gradient(135deg, rgba(74, 158, 255, 0.25), rgba(255, 255, 255, 0.1));
+      border-color: var(--accent-bright);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(74, 158, 255, 0.3);
+    }
+
+    .card i {
+      font-size: 1.6em;
+      display: block;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+
+    .card h4 {
+      margin: 8px 0 6px 0;
+      font-size: 0.75em;
+    }
+
+    .card p {
+      font-size: 0.55em;
+      margin: 0;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .card-center {
+      text-align: center;
+    }
+
+    /* ── Agenda list ── */
+    .agenda-list {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    .agenda-list li {
+      padding: 12px 20px;
+      margin: 8px 0;
+      background: linear-gradient(135deg, var(--accent-dim), rgba(255, 255, 255, 0.03));
+      border-left: 4px solid var(--accent);
+      border-radius: 4px;
+      font-size: 0.85em;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .agenda-list li i {
+      color: var(--accent);
+      width: 24px;
+      text-align: center;
+      padding-right: inherit;
+    }
+
+    .agenda-list li .time {
+      margin-left: auto;
+      font-size: 0.75em;
+      color: var(--text-muted);
+      opacity: 0.7;
+    }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid var(--accent-mid);
+      border-radius: 8px;
+      padding: 18px 22px;
+      text-align: left;
+      font-family: 'Fira Code', 'Cascadia Code', 'JetBrains Mono', monospace;
+      font-size: 0.48em;
+      line-height: 1.6;
+      overflow-x: auto;
+      margin: 15px 0;
+      white-space: pre;
+      word-wrap: normal;
+    }
+
+    .code-block .comment {
+      color: #6a9955;
+    }
+
+    .code-block .keyword {
+      color: #569cd6;
+    }
+
+    .code-block .string {
+      color: #ce9178;
+    }
+
+    .code-block .property {
+      color: #9cdcfe;
+    }
+
+    /* ── File tree ── */
+    .file-tree {
+      text-align: left;
+      font-family: 'Fira Code', 'Cascadia Code', monospace;
+      font-size: 0.55em;
+      line-height: 1.8;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--accent-mid);
+      border-radius: 8px;
+      padding: 18px 25px;
+      display: inline-block;
+    }
+
+    .file-tree .folder {
+      color: var(--accent);
+    }
+
+    .file-tree .file {
+      color: #e0e0e0;
+    }
+
+    .file-tree .highlight {
+      color: #4caf50;
+      font-weight: bold;
+    }
+
+    /* ── Video slide ── */
+    .demo-container {
+      text-align: center;
+    }
+
+    .demo-container video {
+      max-width: 85%;
+      max-height: 55vh;
+      border-radius: 8px;
+      border: 2px solid var(--accent-mid);
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    }
+
+    .demo-context {
+      font-size: 0.6em;
+      color: var(--text-muted);
+      margin-top: 12px;
+      max-width: 800px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    /* ── Comparison table ── */
+    .compare-table {
+      font-size: 0.55em;
+      width: 90%;
+      margin: 15px auto;
+      border-collapse: collapse;
+    }
+
+    .compare-table th {
+      background: linear-gradient(135deg, var(--accent-mid), rgba(255, 255, 255, 0.1));
+      padding: 12px 15px;
+      border: 1px solid var(--accent-bright);
+      text-align: left;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .compare-table td {
+      padding: 10px 15px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .compare-table tr:hover td {
+      background: var(--accent-dim);
+    }
+
+    /* ── Workflow arrows ── */
+    .workflow {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 25px 0;
+    }
+
+    .workflow-step {
+      background: linear-gradient(135deg, var(--accent-dim), rgba(255, 255, 255, 0.05));
+      border: 2px solid var(--accent-mid);
+      border-radius: 8px;
+      padding: 15px 20px;
+      text-align: center;
+      min-width: 120px;
+    }
+
+    .workflow-step i {
+      display: block;
+      font-size: 1.3em;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .workflow-step span {
+      font-size: 0.65em;
+    }
+
+    .workflow-arrow {
+      font-size: 1.5em;
+      color: var(--accent);
+    }
+
+    /* ── Badge / pill ── */
+    .badge {
+      display: inline-block;
+      background: var(--accent-mid);
+      color: #fff;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.55em;
+      margin: 3px;
+    }
+
+    /* ── QA slide ── */
+    .qa-icon {
+      font-size: 4em;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    /* ── Key point highlight ── */
+    .highlight-box {
+      background: linear-gradient(135deg, rgba(255, 209, 0, 0.18), rgba(255, 255, 255, 0.04));
+      border: 2px solid var(--accent);
+      border-radius: 8px;
+      padding: 20px 25px;
+      margin: 20px auto;
+      max-width: 800px;
+      text-align: center;
+    }
+
+    .highlight-box p {
+      font-size: 0.8em;
+      margin: 0;
+    }
+
+    /* ── Break / exercise interstitial slides ── */
+    .interstitial-icon {
+      font-size: 4em;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+
+    .interstitial-sub {
+      font-size: 0.7em;
+      color: var(--text-muted);
+      margin-top: 10px;
+    }
+
+    /* ══════════════════════════════════════════════════════
+       Eficode Title Slide
+       ══════════════════════════════════════════════════════ */
+
+    .title-slide-layout {
+      background-color: var(--eficode-yellow);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 100%;
+      width: 100%;
+      position: relative;
+    }
+
+    .title-slide-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 0 30px 50px 50px;
+      position: relative;
+    }
+
+    .eficode-logo {
+      position: sticky;
+      top: 20px;
+      left: 50px;
+      height: 65px;
+      width: fit-content;
+    }
+
+    .title-heading {
+      font-size: 1.5em !important;
+      font-weight: 900 !important;
+      text-transform: uppercase !important;
+      color: var(--eficode-dark) !important;
+      line-height: 1.05 !important;
+      letter-spacing: -0.01em !important;
+      margin: 0 0 30px 0 !important;
+      text-align: left !important;
+    }
+
+    .title-series {
+      font-size: 0.65em !important;
+      font-weight: 700 !important;
+      color: var(--eficode-dark) !important;
+      margin: 0 0 6px 0 !important;
+      text-align: left !important;
+    }
+
+    .title-url {
+      font-size: 0.55em !important;
+      font-weight: 400 !important;
+      color: var(--eficode-dark) !important;
+      margin: 0 !important;
+      text-align: left !important;
+    }
+
+    .title-slide-right {
+      background: var(--eficode-gray);
+      display: flex;
+      clip-path: polygon(27% 0, 100% 0, 100% 100%, 43% 100%, 0 65%);
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .title-illustration {
+      max-height: 90%;
+      max-width: 100%;
+      object-fit: contain;
+    }
+
+    /* ── Closing Slide ── */
+    .closing-slide-layout {
+      display: grid;
+      grid-template-columns: 56% 44%;
+      height: 100%;
+      width: 100%;
+      position: absolute;
+      inset: 0;
+    }
+
+    .closing-slide-left {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 40px 30px 40px 50px;
+      text-align: left;
+      position: relative;
+      z-index: 1;
+    }
+
+    .closing-thank-you {
+      font-size: 1.6em !important;
+      font-weight: 900 !important;
+      text-align: left !important;
+      margin: 0 !important;
+      text-transform: none !important;
+    }
+
+    .closing-slide-left .contact-list {
+      list-style: none;
+      padding: 50px 0px 50px 0px;
+      margin: 0px 0px 0px 35px;
+    }
+
+    .closing-slide-left .contact-list li {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 0.65em;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .closing-slide-left .contact-list li i {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      background: rgba(0, 0, 0, 0.10);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1em;
+    }
+
+    .closing-cta {
+      background: var(--eficode-yellow);
+      color: var(--eficode-dark);
+      padding: 5px 15px;
+      border-radius: 4px;
+      font-size: 0.4em;
+      font-weight: 300;
+      display: inline-block;
+      align-self: flex-start;
+    }
+
+    .closing-cta strong {
+      font-weight: 800;
+    }
+
+    .closing-slide-right {
+      position: relative;
+      overflow: hidden;
+      background: var(--eficode-yellow);
+      clip-path: polygon(27% 0, 100% 0, 100% 100%, 43% 100%, 0 65%);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .closing-slide-right .title-illustration {
+      max-height: 82%;
+      max-width: 90%;
+      object-fit: contain;
+      position: relative;
+      z-index: 1;
+    }
+
+    .closing-eficode-logo {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      height: 52px;
+      width: auto;
+      z-index: 2;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="reveal">
+    <div class="slides">
+
+      <!-- ═══════════════════════════════ -->
+      <!-- PATTERN: Eficode Title Slide    -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="title-slide-layout">
+          <div class="title-slide-left">
+            <img src="assets/eficode-logo.png" alt="Eficode" class="eficode-logo" />
+            <h1 class="title-heading">Sandboxing Your AI Agent With Nono</h1>
+            <p class="title-series">Nono Workshop</p>
+            <p class="title-url">github.com/eficode-academy/nono-workshop</p>
+          </div>
+          <div class="title-slide-right">
+            <img src="assets/title-illustration.png" alt="" class="title-illustration" />
+          </div>
+        </div>
+        <aside class="notes">
+          Welcome the audience. Today we go from "what is nono?" to running an AI coding agent inside a kernel-enforced sandbox, with credentials it can never see. Format is present → exercise → short break, four times.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- PATTERN: Agenda                -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <h2><i class="fas fa-list-ul" style="color: var(--accent)"></i> Agenda</h2>
+        <p style="font-size: 0.6em; color: var(--text-muted); margin-top: -10px">Total workshop time: ~90 minutes</p>
+        <ul class="agenda-list">
+          <li>
+            <i class="fas fa-shield-halved"></i>
+            00 · Installing Nono
+            <span class="time">~25 min</span>
+          </li>
+          <li>
+            <i class="fas fa-id-badge"></i>
+            01 · Setting Up Your Profile
+            <span class="time">~20 min</span>
+          </li>
+          <li>
+            <i class="fas fa-key"></i>
+            02 · Credential Injection
+            <span class="time">~20 min</span>
+          </li>
+          <li>
+            <i class="fas fa-clock-rotate-left"></i>
+            03 · Audit &amp; Rollback
+            <span class="time">~15 min</span>
+          </li>
+          <li>
+            <i class="fas fa-comments"></i>
+            Q &amp; A / Wrap-up
+            <span class="time">~5 min</span>
+          </li>
+        </ul>
+        <p style="font-size: 0.55em; margin-top: 25px; color: var(--text-muted)">
+          Each block follows the same rhythm: <strong>present</strong> (~5 min) → <strong>hands-on exercise</strong> → <strong>short break</strong>.
+        </p>
+        <aside class="notes">
+          Walk through the four exercises. Explain the repeating rhythm: a short presentation, then time to do the exercise hands-on, then a short break before the next topic. Total runtime is 90 minutes, so keep presentations tight and protect exercise time.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- TOPIC 1: What is Nono? (maps to labs/00)        -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <section>
+
+        <section>
+          <h2>
+            <i class="fas fa-shield-halved" style="color: var(--accent)"></i>
+            What Is Nono?
+          </h2>
+          <p style="font-size: 0.75em">A kernel-enforced sandbox for AI coding agents</p>
+          <p><small>Press ↓ for details</small></p>
+          <div class="highlight-box">
+            <p>
+              Once a sandbox is applied, it <strong>cannot be widened from the inside</strong> —
+              not even by nono itself.
+            </p>
+          </div>
+          <aside class="notes">
+            Introduce nono as an open-source sandboxing runtime for AI agents. It restricts filesystem, network, and credential access using OS-level primitives, enforced by the kernel — not a container or VM.
+          </aside>
+        </section>
+
+        <section>
+          <h3>One Mechanism Per Platform</h3>
+          <table class="compare-table" style="margin-top: 15px">
+            <thead>
+              <tr>
+                <th>Platform</th>
+                <th>Mechanism</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><i class="fab fa-linux" style="color: var(--accent)"></i> Linux (kernel 5.13+)</td>
+                <td>Landlock LSM</td>
+              </tr>
+              <tr>
+                <td><i class="fab fa-apple" style="color: var(--accent)"></i> macOS</td>
+                <td>Seatbelt (<code>sandbox_init</code>)</td>
+              </tr>
+              <tr>
+                <td><i class="fab fa-windows" style="color: var(--accent)"></i> Windows (WSL2)</td>
+                <td>Landlock LSM, via the WSL2 kernel</td>
+              </tr>
+              <tr>
+                <td><i class="fab fa-windows" style="color: var(--accent)"></i> Windows (native)</td>
+                <td>Not supported</td>
+              </tr>
+            </tbody>
+          </table>
+          <aside class="notes">
+            No native Windows support — Landlock and Seatbelt are Linux/macOS-only primitives, so Windows users run inside WSL2, a real Linux kernel alongside Windows.
+          </aside>
+        </section>
+
+        <section>
+          <h3>What Gets Enforced By Default</h3>
+          <div class="grid-3" style="margin-top: 20px">
+            <div class="card card-center">
+              <i class="fas fa-folder-tree" style="font-size: 1.6em; display: block; margin-bottom: 8px"></i>
+              <h4>Filesystem Sandbox</h4>
+              <p>Landlock / Seatbelt restrict which paths a process can touch</p>
+            </div>
+            <div class="card card-center">
+              <i class="fas fa-user-shield" style="font-size: 1.6em; display: block; margin-bottom: 8px"></i>
+              <h4>Sensitive Path Blocking</h4>
+              <p>SSH keys, cloud creds, and other secrets denied by default</p>
+            </div>
+            <div class="card card-center">
+              <i class="fas fa-ban" style="font-size: 1.6em; display: block; margin-bottom: 8px"></i>
+              <h4>Dangerous Command Blocking</h4>
+              <p>Known destructive commands refused before they run</p>
+            </div>
+          </div>
+          <aside class="notes">
+            Show nono setup --check-only output in the exercise: it reports each of these features and whether they're available on the current machine.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Your First Sandboxed Command</h3>
+          <div class="code-block">
+<span class="comment"># Allowed: read a file inside the sandbox</span>
+nono run --allow . -- cat allowed.txt
+
+<span class="comment"># Denied: kernel refuses access outside the sandbox</span>
+nono run --allow . -- cat ~/.ssh/id_rsa
+<span class="comment">## cat: /home/you/.ssh/id_rsa: Permission denied</span>
+
+<span class="comment"># Ask nono why</span>
+nono why --path ~/.ssh/id_rsa --op read
+<span class="comment">## DENIED - sensitive_path (SSH keys and config)</span>
+          </div>
+          <aside class="notes">
+            This isn't cat politely refusing — the kernel itself refuses to open the file for this process. nono why explains the denial.
+          </aside>
+        </section>
+
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Exercise interstitial: Lab 00   -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-laptop-code"></i></div>
+        <h2>Exercise Time</h2>
+        <p style="font-size: 0.8em"><strong>Lab 00 — Installing Nono</strong></p>
+        <p class="interstitial-sub">
+          Install nono, verify sandbox support, and run your first sandboxed command.
+        </p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-book" style="color: var(--accent)"></i>
+          <code>labs/00-installing-nono.md</code>
+          &nbsp;&nbsp;
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i>
+          ~17 min
+        </p>
+        <aside class="notes">
+          Point people to labs/00-installing-nono.md. Circulate to help with WSL2 setup and platform-specific install issues.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Break interstitial              -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-mug-hot"></i></div>
+        <h2>Short Break</h2>
+        <p class="interstitial-sub">Back in a few minutes — next up: Profiles</p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i> ~3 min
+        </p>
+        <aside class="notes">Short break before moving to profiles.</aside>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- TOPIC 2: Profiles (maps to labs/01)             -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <section>
+
+        <section>
+          <h2>
+            <i class="fas fa-id-badge" style="color: var(--accent)"></i>
+            Setting Up Your Profile
+          </h2>
+          <p style="font-size: 0.75em">Stop retyping flags — bundle them into a reusable profile</p>
+          <p><small>Press ↓ for details</small></p>
+          <div class="highlight-box">
+            <p>
+              A <strong>profile</strong> is a JSON(C) file bundling filesystem scope,
+              network rules, credentials, and hooks — passed with <code>--profile</code>.
+            </p>
+          </div>
+          <aside class="notes">
+            Motivate profiles: flags are fine for one-off experiments, but profiles are what you check into dotfiles or share with a team so everyone gets the same least-privilege sandbox.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Two Ways to Get a Profile</h3>
+          <div class="grid-2" style="margin-top: 20px">
+            <div class="card">
+              <i class="fas fa-cloud-arrow-down" style="color: var(--accent)"></i>
+              <h4>Pull From the Registry</h4>
+              <p>
+                <span class="badge">Fastest path</span><br /><br />
+                Signed, ready-to-use profiles for Claude Code, Copilot CLI,
+                OpenCode, and more at <code>registry.nono.sh</code>.
+              </p>
+            </div>
+            <div class="card">
+              <i class="fas fa-pen-ruler" style="color: var(--accent)"></i>
+              <h4>Author Your Own</h4>
+              <p>
+                <span class="badge">Full control</span><br /><br />
+                Scaffold an empty profile, or <code>extend</code> a registry
+                profile and override only what differs.
+              </p>
+            </div>
+          </div>
+          <aside class="notes">
+            Profiles that extend a base inherit everything from it — list-type fields are additive, single-value fields are overridden by the child profile.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Extending a Base Profile</h3>
+          <div class="code-block">
+<span class="comment">// my-claude.json — extends a pulled registry profile</span>
+{
+  <span class="property">"extends"</span>: <span class="string">"nolabs-ai/claude"</span>,
+  <span class="property">"meta"</span>: { <span class="property">"name"</span>: <span class="string">"my-claude"</span> },
+  <span class="property">"filesystem"</span>: {
+    <span class="property">"allow"</span>: [<span class="string">"/opt/my-tools"</span>],
+    <span class="property">"read"</span>: [<span class="string">"/etc/my-app"</span>]
+  }
+}
+          </div>
+          <aside class="notes">
+            This profile inherits everything from nolabs-ai/claude — network rules, hooks, credentials — and only adds two extra paths. The base profile itself stays untouched.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Validate and Inspect</h3>
+          <div class="code-block">
+nono profile validate ~/.config/nono/profiles/my-claude.json
+
+<span class="comment"># fully resolved profile after all merging</span>
+nono profile show my-claude
+
+<span class="comment"># exactly what changed vs. the default profile</span>
+nono profile diff default my-claude
+          </div>
+          <aside class="notes">
+            Because of inheritance, the profile you wrote and the profile nono actually applies can look quite different — always check both before trusting it.
+          </aside>
+        </section>
+
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Exercise interstitial: Lab 01   -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-laptop-code"></i></div>
+        <h2>Exercise Time</h2>
+        <p style="font-size: 0.8em"><strong>Lab 01 — Setting Up Your Profile</strong></p>
+        <p class="interstitial-sub">
+          Pull a registry profile, scaffold your own, and extend a base profile.
+        </p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-book" style="color: var(--accent)"></i>
+          <code>labs/01-setting-up-your-profile.md</code>
+          &nbsp;&nbsp;
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i>
+          ~12 min
+        </p>
+        <aside class="notes">
+          Point people to labs/01-setting-up-your-profile.md. Help anyone whose agent isn't in the registry yet — they can still scaffold from scratch.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Break interstitial              -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-mug-hot"></i></div>
+        <h2>Short Break</h2>
+        <p class="interstitial-sub">Back in a few minutes — next up: Credential Injection</p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i> ~3 min
+        </p>
+        <aside class="notes">Short break before moving to credential injection.</aside>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- TOPIC 3: Credential Injection (maps to labs/02) -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <section>
+
+        <section>
+          <h2>
+            <i class="fas fa-key" style="color: var(--accent)"></i>
+            Credential Injection
+          </h2>
+          <p style="font-size: 0.75em">Give your agent access to secrets it can use but never see</p>
+          <p><small>Press ↓ for details</small></p>
+          <div class="highlight-box">
+            <p>
+              An agent that can read its own environment can read your API keys —
+              and a prompt-injected or buggy agent can leak them.
+            </p>
+          </div>
+          <aside class="notes">
+            Frame the problem: raw secrets in environment variables are readable by the process itself. nono offers two mitigations of different strength.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Two Injection Methods</h3>
+          <table class="compare-table" style="margin-top: 15px">
+            <thead>
+              <tr>
+                <th>Method</th>
+                <th>How it works</th>
+                <th>Agent sees</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>--env-credential</code></td>
+                <td>Loads secret from keystore, sets env var before sandbox applies</td>
+                <td><i class="fas fa-eye" style="color: #ff9800"></i> Raw value</td>
+              </tr>
+              <tr>
+                <td><code>--credential</code> (proxy)</td>
+                <td>Agent talks to a local reverse proxy; real key injected outbound</td>
+                <td><i class="fas fa-eye-slash" style="color: #4caf50"></i> Placeholder only</td>
+              </tr>
+            </tbody>
+          </table>
+          <aside class="notes">
+            Use proxy injection for anything that's an HTTP API call — LLM keys, GitHub tokens. Use env injection only for secrets not consumed over HTTP, e.g. a DB password read directly by a library.
+          </aside>
+        </section>
+
+        <section>
+          <h3>How Proxy Injection Works</h3>
+          <div class="workflow" style="margin-top: 20px">
+            <div class="workflow-step">
+              <i class="fas fa-robot"></i>
+              <span>Agent (sandboxed)</span>
+            </div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">
+              <i class="fas fa-shield-halved"></i>
+              <span>Local proxy<br />127.0.0.1</span>
+            </div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">
+              <i class="fas fa-cloud"></i>
+              <span>api.openai.com</span>
+            </div>
+          </div>
+          <p style="font-size: 0.55em; color: var(--text-muted); text-align: center">
+            The agent only ever holds a phantom token, e.g. <code>OPENAI_API_KEY=nono_sess_a1b2c3...</code> —
+            the proxy swaps in the real key on the way out.
+          </p>
+          <aside class="notes">
+            The agent never has the real key in its environment or memory. Any HTTP client that respects OPENAI_BASE_URL gets redirected through the local proxy automatically.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Wire It Into a Profile</h3>
+          <div class="code-block">
+{
+  <span class="property">"network"</span>: {
+    <span class="property">"custom_credentials"</span>: {
+      <span class="property">"openai"</span>: {
+        <span class="property">"upstream"</span>: <span class="string">"https://api.openai.com/v1"</span>,
+        <span class="property">"credential_key"</span>: <span class="string">"openai"</span>,
+        <span class="property">"env_var"</span>: <span class="string">"OPENAI_API_KEY"</span>,
+        <span class="property">"inject_header"</span>: <span class="string">"Authorization"</span>
+      }
+    },
+    <span class="property">"credentials"</span>: [<span class="string">"openai"</span>]
+  }
+}
+          </div>
+          <aside class="notes">
+            Once wired into a profile, every future run through --profile my-agent-secure gets the credential automatically — no need to remember flags.
+          </aside>
+        </section>
+
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Exercise interstitial: Lab 02   -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-laptop-code"></i></div>
+        <h2>Exercise Time</h2>
+        <p style="font-size: 0.8em"><strong>Lab 02 — Credential Injection</strong></p>
+        <p class="interstitial-sub">
+          Store a secret in your keystore, inject it via env var and via proxy, and verify what's exposed.
+        </p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-book" style="color: var(--accent)"></i>
+          <code>labs/02-credential-injection.md</code>
+          &nbsp;&nbsp;
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i>
+          ~12 min
+        </p>
+        <aside class="notes">
+          Point people to labs/02-credential-injection.md. Remind WSL2 users that proxy-only network mode needs an explicit opt-in due to a seccomp conflict.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Break interstitial              -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-mug-hot"></i></div>
+        <h2>Short Break</h2>
+        <p class="interstitial-sub">Back in a few minutes — next up: Audit &amp; Rollback</p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i> ~3 min
+        </p>
+        <aside class="notes">Short break before moving to audit and rollback, the final topic.</aside>
+      </section>
+
+      <!-- ═══════════════════════════════════════════════ -->
+      <!-- TOPIC 4: Audit & Rollback (maps to labs/03)     -->
+      <!-- ═══════════════════════════════════════════════ -->
+      <section>
+
+        <section>
+          <h2>
+            <i class="fas fa-clock-rotate-left" style="color: var(--accent)"></i>
+            Audit &amp; Rollback
+          </h2>
+          <p style="font-size: 0.75em">A tamper-evident record of everything your agent did — and a way to undo it</p>
+          <p><small>Press ↓ for details</small></p>
+          <div class="highlight-box">
+            <p>
+              Every <code>nono run</code> is recorded by a trusted supervisor that stays
+              <strong>outside</strong> the sandbox for the whole session.
+            </p>
+          </div>
+          <aside class="notes">
+            Sandboxing stops what shouldn't happen; audit and rollback handle the legitimate changes agents make to files they were allowed to touch.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Four Layers, Each Opt-In Beyond the Baseline</h3>
+          <table class="compare-table" style="margin-top: 10px">
+            <thead>
+              <tr>
+                <th>Layer</th>
+                <th>Answers</th>
+                <th>Enabled by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Session audit</td>
+                <td>What ran, when, what happened?</td>
+                <td>Default on</td>
+              </tr>
+              <tr>
+                <td>Audit-log integrity</td>
+                <td>Has the log been modified?</td>
+                <td>Default on</td>
+              </tr>
+              <tr>
+                <td>Filesystem integrity</td>
+                <td>What state existed before/after?</td>
+                <td><code>--audit-integrity</code></td>
+              </tr>
+              <tr>
+                <td>Rollback</td>
+                <td>Can changes be restored later?</td>
+                <td><code>--rollback</code></td>
+              </tr>
+            </tbody>
+          </table>
+          <aside class="notes">
+            Audit is cheap — an event log plus optional hash. Rollback is heavier: full content-addressable snapshots before and after the run, so it's opt-in.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Inspecting the Audit Trail</h3>
+          <div class="code-block">
+nono audit list --path ~/nono-workshop-scratch
+nono audit show 20260219-092017-8117
+nono audit verify 20260219-092017-8117
+          </div>
+          <aside class="notes">
+            list groups sessions by project directory; show prints the command, timestamps, exit code, and every event; verify recomputes the hash-chain to detect tampering.
+          </aside>
+        </section>
+
+        <section>
+          <h3>Snapshot and Roll Back</h3>
+          <div class="workflow" style="margin-top: 15px">
+            <div class="workflow-step">
+              <i class="fas fa-play"></i>
+              <span>--rollback run</span>
+            </div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">
+              <i class="fas fa-code-compare"></i>
+              <span>rollback show --diff</span>
+            </div>
+            <span class="workflow-arrow">→</span>
+            <div class="workflow-step">
+              <i class="fas fa-rotate-left"></i>
+              <span>rollback restore</span>
+            </div>
+          </div>
+          <p style="font-size: 0.55em; color: var(--text-muted); text-align: center">
+            <code>nono rollback verify</code> checks the snapshot store's Merkle tree for missing or corrupted data.
+          </p>
+          <aside class="notes">
+            When file changes are detected, nono shows an interactive review right after the session. Restores can be previewed with --dry-run first.
+          </aside>
+        </section>
+
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- Exercise interstitial: Lab 03   -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="interstitial-icon"><i class="fas fa-laptop-code"></i></div>
+        <h2>Exercise Time</h2>
+        <p style="font-size: 0.8em"><strong>Lab 03 — Audit &amp; Rollback</strong></p>
+        <p class="interstitial-sub">
+          Inspect a session's audit trail, then use --rollback to review and restore a file change.
+        </p>
+        <p style="font-size: 0.6em; margin-top: 20px">
+          <i class="fas fa-book" style="color: var(--accent)"></i>
+          <code>labs/03-audit-and-rollback.md</code>
+          &nbsp;&nbsp;
+          <i class="fas fa-hourglass-half" style="color: var(--accent)"></i>
+          ~10 min
+        </p>
+        <aside class="notes">
+          Point people to labs/03-audit-and-rollback.md. This is the last exercise — ties together sandboxing, credentials, and audit into the full loop.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- PATTERN: Q&A / Closing Slide    -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="qa-icon">
+          <i class="fas fa-comments"></i>
+        </div>
+        <h1>Q &amp; A</h1>
+        <p style="font-size: 0.8em; color: var(--text-muted)">
+          What worked? What surprised you? What would you sandbox next?
+        </p>
+        <br />
+        <p style="font-size: 0.6em">
+          <i class="fas fa-book" style="color: var(--accent)"></i> github.com/eficode-academy/nono-workshop
+          &nbsp;&nbsp;
+          <i class="fas fa-shield-halved" style="color: var(--accent)"></i> github.com/nolabs-ai/nono
+        </p>
+        <aside class="notes">
+          Recap the full loop: restrict what an agent can do, hide the secrets it uses, and keep a tamper-evident, reversible record of everything it did. Open the floor.
+        </aside>
+      </section>
+
+      <!-- ═══════════════════════════════ -->
+      <!-- PATTERN: Eficode Closing Slide  -->
+      <!-- ═══════════════════════════════ -->
+      <section>
+        <div class="closing-slide-layout">
+          <div class="closing-slide-left">
+            <h1 class="closing-thank-you">Thank you</h1>
+            <ul class="contact-list">
+              <li><i class="fa-brands fa-linkedin"></i>linkedin.com/company/eficode</li>
+              <li><i class="fa-brands fa-x-twitter"></i>twitter.com/eficode</li>
+              <li><i class="fa-brands fa-facebook"></i>facebook.com/eficode</li>
+            </ul>
+            <div class="closing-cta">More info? Go visit <strong>www.eficode.com</strong></div>
+          </div>
+          <div class="closing-slide-right">
+            <img src="assets/eficode-logo.png" alt="Eficode" class="closing-eficode-logo" />
+            <img src="assets/closing-illustration.png" alt="" class="title-illustration" />
+          </div>
+        </div>
+        <aside class="notes">
+          Thank participants for their time and encourage them to keep exploring the roadmap items: tool sandboxing, network policies, and publishing packs.
+        </aside>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Theme toggle button -->
+  <button id="themeToggle" class="theme-toggle" title="Toggle light/dark theme (T)">
+    <i class="fas fa-moon"></i>
+  </button>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/reveal.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/5.2.1/plugin/notes/notes.min.js"></script>
+  <script>
+    // Theme toggle
+    const darkSheet = document.getElementById('theme-dark');
+    const lightSheet = document.getElementById('theme-light');
+    const toggleBtn = document.getElementById('themeToggle');
+    let isDark = false;
+
+    function setTheme(dark) {
+      isDark = dark;
+      darkSheet.disabled = !dark;
+      lightSheet.disabled = dark;
+      document.documentElement.classList.toggle('light-mode', !dark);
+      toggleBtn.innerHTML = dark
+        ? '<i class="fas fa-sun"></i>'
+        : '<i class="fas fa-moon"></i>';
+    }
+
+    setTheme(false);
+
+    toggleBtn.addEventListener('click', () => setTheme(!isDark));
+
+    // Keyboard shortcut: press T to toggle theme
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 't' || e.key === 'T') setTheme(!isDark);
+    });
+
+    Reveal.initialize({
+      hash: true,
+      transition: "slide",
+      controls: true,
+      progress: true,
+      center: true,
+      slideNumber: true,
+      keyboard: true,
+      overview: true,
+      touch: true,
+      loop: false,
+      fragments: true,
+      plugins: [RevealNotes],
+    });
+  </script>
+</body>
+</html>
